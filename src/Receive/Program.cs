@@ -16,7 +16,7 @@ if (!connection.IsConnected)
 }
 using var channel = connection.CreateModel();
 
-channel.QueueDeclare(queue: "hello",
+channel.QueueDeclare(queue: "task_queue",
     durable: false,
     exclusive: false,
     autoDelete: false,
@@ -30,12 +30,16 @@ consumer.Received += (model, ea) =>
     var body = ea.Body.ToArray();
     var message = Encoding.UTF8.GetString(body);
     Console.WriteLine($" [x] Received {message}");
+    int dots = message.Split('.').Length - 1;
+    Thread.Sleep(dots * 1000);
+    Console.WriteLine(" [x] Done");
+    channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false ); 
     return Task.CompletedTask;
 };
 
 channel.BasicConsume(
-    queue: "hello",
-    autoAck: true,
+    queue: "task_queue",
+    autoAck: false,
     consumer: consumer);
 
 Console.WriteLine(" Press [enter] to exit.");

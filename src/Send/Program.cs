@@ -12,22 +12,33 @@ if (!connection.IsConnected)
 {
     connection.TryConnect();
 }
+
 using var channel = connection.CreateModel();
-channel.QueueDeclare(queue: "hello",
-    durable: false, 
+channel.ConfirmSelect();
+channel.QueueDeclare(queue: "task_queue",
+    durable: false,
     exclusive: false,
     autoDelete: false,
     arguments: null);
-    
-const string message = "Hello World!";
+
+var message = GetMessage(args);
 var body = Encoding.UTF8.GetBytes(message);
 
+var properties = channel.CreateBasicProperties();
+properties.Persistent = true; // persistent
+
 channel.BasicPublish(exchange: string.Empty,
-    routingKey: "hello",
+    routingKey: "task_queue",
     mandatory: true,
-    basicProperties: null,
+    basicProperties: properties,
     body: body);
+
+channel.WaitForConfirmsOrDie(TimeSpan.FromSeconds(5));
 Console.WriteLine($" [x] Sent {message}");
 
 Console.WriteLine(" Press [enter] to exit.");
-Console.ReadLine();
+
+static string GetMessage(string[] args)
+{
+    return ((args.Length > 0) ? string.Join(" ", args) : "Hello World!");
+}
