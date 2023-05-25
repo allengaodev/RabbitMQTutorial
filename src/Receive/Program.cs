@@ -17,7 +17,7 @@ if (!connection.IsConnected)
 using var channel = connection.CreateModel();
 
 channel.QueueDeclare(queue: "task_queue",
-    durable: false,
+    durable: true,
     exclusive: false,
     autoDelete: false,
     arguments: null);
