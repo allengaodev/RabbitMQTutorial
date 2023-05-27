@@ -16,13 +16,9 @@ if (!connection.IsConnected)
 }
 using var channel = connection.CreateModel();
 
-channel.QueueDeclare(queue: "task_queue",
-    durable: true,
-    exclusive: false,
-    autoDelete: false,
-    arguments: null);
-
-channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
+channel.ExchangeDeclare("score_exchange", ExchangeType.Fanout);
+var queueName = channel.QueueDeclare().QueueName;
+channel.QueueBind(queueName, "score_exchange", string.Empty);
 
 Console.WriteLine(" [*] Waiting for messages.");
 
@@ -35,13 +31,12 @@ consumer.Received += (model, ea) =>
     int dots = message.Split('.').Length - 1;
     Thread.Sleep(dots * 1000);
     Console.WriteLine(" [x] Done");
-    channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false ); 
     return Task.CompletedTask;
 };
 
 channel.BasicConsume(
-    queue: "task_queue",
-    autoAck: false,
+    queue: queueName,
+    autoAck: true,
     consumer: consumer);
 
 Console.WriteLine(" Press [enter] to exit.");

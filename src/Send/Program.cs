@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using RabbitMQ.Client;
 using Services.Common;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,28 +15,28 @@ if (!connection.IsConnected)
 }
 
 using var channel = connection.CreateModel();
-channel.ConfirmSelect();
-channel.QueueDeclare(queue: "task_queue",
-    durable: true,
-    exclusive: false,
-    autoDelete: false,
-    arguments: null);
+
+channel.ExchangeDeclare("score_exchange", ExchangeType.Fanout);
 
 var message = GetMessage(args);
 var body = Encoding.UTF8.GetBytes(message);
 
-var properties = channel.CreateBasicProperties();
-properties.Persistent = true; // persistent
-
-channel.BasicPublish(exchange: string.Empty,
-    routingKey: "task_queue",
+channel.BasicPublish(exchange: "score_exchange",
+    routingKey: string.Empty,
     mandatory: true,
-    basicProperties: properties,
+    basicProperties: null,
     body: body);
 
-channel.WaitForConfirmsOrDie(TimeSpan.FromSeconds(5));
-Console.WriteLine($" [x] Sent {message}");
+channel.BasicReturn += (model, ea) =>
+{
+    var body = ea.Body.ToArray();
+    var message = Encoding.UTF8.GetString(body);
+    Console.WriteLine(message);
+    Console.WriteLine(" No Binding Queue");
+    Console.WriteLine(" [x] Done");
+};
 
+Console.WriteLine($" [x] Sent {message}");
 Console.WriteLine(" Press [enter] to exit.");
 
 static string GetMessage(string[] args)
