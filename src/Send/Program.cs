@@ -16,15 +16,22 @@ if (!connection.IsConnected)
 
 using var channel = connection.CreateModel();
 
-channel.ExchangeDeclare("topic_exchange", ExchangeType.Topic);
+channel.ExchangeDeclare("header_exchange", ExchangeType.Headers);
 
 var message = GetMessage(args);
 var body = Encoding.UTF8.GetBytes(message);
 
-channel.BasicPublish(exchange: "topic_exchange",
-    routingKey: "vip.group.1",
+var properties = channel.CreateBasicProperties();
+properties.Headers = new Dictionary<string, object>()
+{
+    {"group", "vip"},
+    {"level", "2"},
+};
+
+channel.BasicPublish(exchange: "header_exchange",
+    routingKey: string.Empty,
     mandatory: true,
-    basicProperties: null,
+    basicProperties: properties,
     body: body);
 
 channel.BasicReturn += (model, ea) =>

@@ -14,11 +14,18 @@ if (!connection.IsConnected)
 {
     connection.TryConnect();
 }
+
 using var channel = connection.CreateModel();
 
-channel.ExchangeDeclare("topic_exchange", ExchangeType.Topic);
+channel.ExchangeDeclare("header_exchange", ExchangeType.Headers);
 var queueName = channel.QueueDeclare().QueueName;
-channel.QueueBind(queueName, "topic_exchange", string.Join("", args));
+var header = new Dictionary<string, object>()
+{
+    { "group", "vip" },
+    { "level", "1" },
+    { "x-match", "any" }
+};
+channel.QueueBind(queueName, "header_exchange", string.Empty, header);
 
 Console.WriteLine(" [*] Waiting for messages.");
 
