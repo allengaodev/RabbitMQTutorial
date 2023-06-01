@@ -16,13 +16,13 @@ if (!connection.IsConnected)
 
 using var channel = connection.CreateModel();
 
-channel.ExchangeDeclare("score_exchange", ExchangeType.Fanout);
+channel.ExchangeDeclare("direct_exchange", ExchangeType.Direct);
 
 var message = GetMessage(args);
 var body = Encoding.UTF8.GetBytes(message);
 
-channel.BasicPublish(exchange: "score_exchange",
-    routingKey: string.Empty,
+channel.BasicPublish(exchange: "direct_exchange",
+    routingKey: "group1",
     mandatory: true,
     basicProperties: null,
     body: body);
