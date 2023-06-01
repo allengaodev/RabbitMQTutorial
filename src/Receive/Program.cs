@@ -16,9 +16,9 @@ if (!connection.IsConnected)
 }
 using var channel = connection.CreateModel();
 
-channel.ExchangeDeclare("direct_exchange", ExchangeType.Direct);
+channel.ExchangeDeclare("topic_exchange", ExchangeType.Topic);
 var queueName = channel.QueueDeclare().QueueName;
-channel.QueueBind(queueName, "direct_exchange", string.Join("", args));
+channel.QueueBind(queueName, "topic_exchange", string.Join("", args));
 
 Console.WriteLine(" [*] Waiting for messages.");
 
